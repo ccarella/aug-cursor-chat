@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { ChatMessage as Bubble } from "@/components/chat-message";
+import { toMarkdownWithCitationLinks } from "@/lib/citations";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -119,30 +121,7 @@ export default function Home() {
             </div>
           ) : (
             messages.map((m, idx) => (
-              <div key={idx} className="whitespace-pre-wrap">
-                <span className="font-mono text-xs px-2 py-1 rounded bg-black/[.05] dark:bg-white/[.06] mr-2">
-                  {m.role === "user" ? "You" : "AI"}
-                </span>
-                {m.role === "assistant" ? (
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      a: (anchorProps) => (
-                        <a
-                          {...anchorProps}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline text-blue-600 visited:text-purple-600 hover:opacity-80"
-                        />
-                      ),
-                    }}
-                  >
-                    {toMarkdownWithCitationLinks(m.content, m.citations)}
-                  </ReactMarkdown>
-                ) : (
-                  m.content
-                )}
-              </div>
+              <Bubble key={idx} role={m.role} content={m.content} citations={m.citations} />
             ))
           )}
         </div>
