@@ -34,3 +34,22 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Environment variables
+
+The app can fetch real-time upcoming games from TheSportsDB.
+
+- `THESPORTSDB_API_KEY` (optional): If not set, the API will use the free demo key `123`.
+
+Local usage example (no config needed):
+
+```bash
+npm run dev
+# then open http://localhost:3000/api/games
+```
+
+Force-refresh to bypass the 10-minute cache:
+
+```bash
+open "http://localhost:3000/api/games?force=1"
+```

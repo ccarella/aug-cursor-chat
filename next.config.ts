@@ -7,6 +7,18 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "upload.wikimedia.org",
       },
+      {
+        protocol: "https",
+        hostname: "a.espncdn.com",
+      },
+      {
+        protocol: "https",
+        hostname: "www.thesportsdb.com",
+      },
+      {
+        protocol: "https",
+        hostname: "thesportsdb.com",
+      },
     ],
     // Allow rendering SVGs from trusted domains (Wikimedia). SVGs are not optimized.
     dangerouslyAllowSVG: true,
