@@ -23,13 +23,14 @@ export default function Home() {
   }, [messages]);
 
   // Allow programmatic sends (e.g., clicking a game card)
-  async function sendText(text: string) {
+  async function sendText(text: string, displayText?: string) {
     const trimmed = text.trim();
     if (!trimmed || isLoading) return;
     setInput("");
     const nextMessages: ChatMessage[] = [
       ...messages,
-      { role: "user", content: trimmed },
+      // Show a friendlier message if provided; otherwise show the raw text
+      { role: "user", content: (displayText || trimmed) },
     ];
     setMessages(nextMessages);
     setIsLoading(true);
@@ -134,7 +135,8 @@ export default function Home() {
                   teamLogoUrl="https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg"
                   onClick={() =>
                     sendText(
-                      `Tell me more about this game and Yamal back from knock; midfield rotation watch`
+                      `Tell me more about this game and Yamal back from knock; midfield rotation watch`,
+                      `Tell me more about the FC Barcelona game`
                     )
                   }
                 />
@@ -148,7 +150,8 @@ export default function Home() {
                   teamLogoUrl="https://upload.wikimedia.org/wikipedia/en/thumb/d/d6/Inter_Miami_CF_logo.svg/64px-Inter_Miami_CF_logo.svg.png"
                   onClick={() =>
                     sendText(
-                      `Tell me more about this game and Messi minutes? Tata vs. ATL narrative heats up`
+                      `Tell me more about this game and Messi minutes? Tata vs. ATL narrative heats up`,
+                      `Tell me more about the Inter Miami game`
                     )
                   }
                 />
@@ -162,7 +165,8 @@ export default function Home() {
                   teamLogoUrl="https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/NewYorkYankees_caplogo.svg/64px-NewYorkYankees_caplogo.svg.png"
                   onClick={() =>
                     sendText(
-                      `Tell me more about this game and Cole vs. Sale — rubber match vibes`
+                      `Tell me more about this game and Cole vs. Sale — rubber match vibes`,
+                      `Tell me more about the New York Yankees game`
                     )
                   }
                 />
@@ -176,7 +180,8 @@ export default function Home() {
                   teamLogoUrl="https://upload.wikimedia.org/wikipedia/en/2/25/New_York_Knicks_logo.svg"
                   onClick={() =>
                     sendText(
-                      `Tell me more about this game and New-look bench unit preview`
+                      `Tell me more about this game and New-look bench unit preview`,
+                      `Tell me more about the New York Knicks game`
                     )
                   }
                 />
