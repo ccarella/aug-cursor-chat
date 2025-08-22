@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 type ChatMessage = {
-  role: "user" | "assistant" | "system";
+  role: "system" | "user" | "assistant";
   content: string;
 };
 
@@ -62,60 +62,79 @@ Examples of intent handling
 • "knicks injuries?" → Current status of key players, updated timestamps, how it affects rotations.
 • "yankees odds tonight" → Probabilities (clearly labeled as estimates), likely starters, recent form, park factors if relevant, with sources.`;
 
-export async function POST(req: Request) {
-  try {
-    const apiKey = process.env.PERPLEXITY_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "Missing PERPLEXITY_API_KEY environment variable" },
-        { status: 500 }
-      );
-    }
+function getApiKey(): string {
+  const key = process.env.PERPLEXITY_API_KEY;
+  if (!key) {
+    throw new Error("Missing PERPLEXITY_API_KEY environment variable");
+  }
+  return key;
+}
 
-    const body = await req.json().catch(() => null);
-    const messages = (body?.messages ?? []) as ChatMessage[];
-    if (!Array.isArray(messages) || messages.length === 0) {
+export async function POST(request: Request) {
+  try {
+    const apiKey = getApiKey();
+
+    const body = await request.json().catch(() => ({}));
+    const messages: ChatMessage[] = Array.isArray(body?.messages)
+      ? body.messages
+      : [];
+
+    if (messages.length === 0) {
       return NextResponse.json(
-        { error: "Request body must include non-empty messages array" },
+        { error: "Request body must include messages: ChatMessage[]" },
         { status: 400 }
       );
     }
 
-    // Prepare outbound messages - prepend system prompt
-    const outboundMessages: ChatMessage[] = [
-      { role: "system", content: SYSTEM_PROMPT },
-      ...messages.map((m) => ({ role: m.role, content: m.content })),
-    ];
+    // Force a system instruction to ensure web results are used each turn.
+    const systemPreamble: ChatMessage = {
+      role: "system",
+      content:
+        "You are a helpful assistant that ALWAYS uses fresh web results in reasoning and cites sources. If web data is unavailable, state that explicitly.",
+    };
 
-    // Call Perplexity Chat Completions API; it is OpenAI-compatible in shape
-    const pplxRes = await fetch("https://api.perplexity.ai/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "sonar",
-        messages: outboundMessages.map((m) => ({ role: m.role, content: m.content })),
-        temperature: 0.7,
-        return_citations: true,
-      }),
-    });
+    const upstreamResponse = await fetch(
+      "https://api.perplexity.ai/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "sonar-pro",
+          // Prepend Sonar Sports Buddy prompt and the web-results preamble
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            systemPreamble,
+            ...messages,
+          ],
+          // Non-streaming for simple verification via curl; streaming can be added client-side
+          stream: false,
+          // Encourage citations so users see sources from web search
+          return_citations: true,
+        }),
+      }
+    );
 
-    if (!pplxRes.ok) {
-      const errorPayload = await pplxRes.json().catch(() => ({}));
+    if (!upstreamResponse.ok) {
+      const errText = await upstreamResponse.text();
       return NextResponse.json(
-        { error: errorPayload?.error?.message || `Upstream error` },
+        {
+          error: "Upstream error",
+          status: upstreamResponse.status,
+          detail: errText,
+        },
         { status: 502 }
       );
     }
 
-    const data = await pplxRes.json();
+    const data = await upstreamResponse.json();
     return NextResponse.json(data);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unexpected server error";
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown server error";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-
 
