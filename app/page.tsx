@@ -17,10 +17,89 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const listRef = useRef<HTMLDivElement | null>(null);
+  const [games, setGames] = useState<
+    Array<{
+      teamName: string;
+      opponent: string;
+      homeAway: "Home" | "Away";
+      competition: string;
+      datetimeUTC: string | null;
+      venue?: string | null;
+      teamLogoUrl?: string | null;
+    }>
+  >([]);
+  const [storylines, setStorylines] = useState<Record<string, string>>({});
+  const [storylinesLoading, setStorylinesLoading] = useState(false);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
   }, [messages]);
+
+  // Load dynamic games on first render when no chat yet
+  useEffect(() => {
+    let cancelled = false;
+    async function loadGamesAndStorylines() {
+      try {
+        const res = await fetch("/api/games", { cache: "no-store" });
+        const data = await res.json();
+        const itemsRaw = Array.isArray(data?.items) ? data.items : [];
+        // Ensure Inter Miami always appears with a placeholder when no next event is returned
+        let list = itemsRaw;
+        const hasInterMiami = list.some((g: any) => {
+          const name = (g?.teamName || g?.team || "").toString().trim().toLowerCase();
+          return name === "inter miami" || name === "inter miami cf";
+        });
+        if (!hasInterMiami) {
+          list = [
+            ...list,
+            {
+              teamName: "Inter Miami",
+              opponent: "TBD",
+              homeAway: "Home",
+              competition: "MLS",
+              datetimeUTC: null,
+              venue: null,
+              teamLogoUrl: null,
+            },
+          ];
+        }
+        if (cancelled) return;
+        setGames(list);
+
+        if (list.length > 0) {
+          setStorylinesLoading(true);
+          const storyRes = await fetch("/api/storylines", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              items: list.map((g: any) => ({
+                teamName: g.teamName,
+                opponent: g.opponent,
+                competition: g.competition,
+                datetimeUTC: g.datetimeUTC,
+                homeAway: g.homeAway,
+              })),
+            }),
+          });
+          const storyData = await storyRes.json().catch(() => ({}));
+          if (!cancelled) {
+            const map = storyData?.storylines && typeof storyData.storylines === "object" ? storyData.storylines : {};
+            setStorylines(map as Record<string, string>);
+          }
+        }
+      } catch {
+        // swallow; UI will just show without storylines
+      } finally {
+        if (!cancelled) setStorylinesLoading(false);
+      }
+    }
+    if (messages.length === 0) {
+      loadGamesAndStorylines();
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [messages.length]);
 
   // Allow programmatic sends (e.g., clicking a game card)
   async function sendText(text: string, displayText?: string) {
@@ -125,66 +204,47 @@ export default function Home() {
             <>
               <div className="text-sm opacity-70 mb-2">Upcoming games</div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <GameCard
-                  teamName="FC Barcelona"
-                  opponent="Getafe"
-                  homeAway="Home"
-                  competition="LaLiga"
-                  datetimeLocal="Sat, Aug 23 • 2:00 PM"
-                  storyline="Yamal back from knock; midfield rotation watch"
-                  teamLogoUrl="https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg"
-                  onClick={() =>
-                    sendText(
-                      `Tell me more about this game and Yamal back from knock; midfield rotation watch`,
-                      `Tell me more about the FC Barcelona game`
-                    )
-                  }
-                />
-                <GameCard
-                  teamName="Inter Miami"
-                  opponent="Atlanta United"
-                  homeAway="Away"
-                  competition="MLS"
-                  datetimeLocal="Sun, Aug 24 • 6:30 PM"
-                  storyline="Messi minutes? Tata vs. ATL narrative heats up"
-                  teamLogoUrl="https://upload.wikimedia.org/wikipedia/en/thumb/d/d6/Inter_Miami_CF_logo.svg/64px-Inter_Miami_CF_logo.svg.png"
-                  onClick={() =>
-                    sendText(
-                      `Tell me more about this game and Messi minutes? Tata vs. ATL narrative heats up`,
-                      `Tell me more about the Inter Miami game`
-                    )
-                  }
-                />
-                <GameCard
-                  teamName="New York Yankees"
-                  opponent="Red Sox"
-                  homeAway="Home"
-                  competition="MLB"
-                  datetimeLocal="Fri, Aug 22 • 7:05 PM EDT"
-                  storyline="Cole vs. Sale — rubber match vibes"
-                  teamLogoUrl="https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/NewYorkYankees_caplogo.svg/64px-NewYorkYankees_caplogo.svg.png"
-                  onClick={() =>
-                    sendText(
-                      `Tell me more about this game and Cole vs. Sale — rubber match vibes`,
-                      `Tell me more about the New York Yankees game`
-                    )
-                  }
-                />
-                <GameCard
-                  teamName="New York Knicks"
-                  opponent="Celtics"
-                  homeAway="Away"
-                  competition="NBA (Preseason)"
-                  datetimeLocal="Oct 2 • 7:30 PM"
-                  storyline="New-look bench unit preview"
-                  teamLogoUrl="https://upload.wikimedia.org/wikipedia/en/2/25/New_York_Knicks_logo.svg"
-                  onClick={() =>
-                    sendText(
-                      `Tell me more about this game and New-look bench unit preview`,
-                      `Tell me more about the New York Knicks game`
-                    )
-                  }
-                />
+                {games.map((g, idx) => {
+                  const localDate = (() => {
+                    if (!g.datetimeUTC) return "TBD";
+                    try {
+                      const d = new Date(g.datetimeUTC);
+                      const opts: Intl.DateTimeFormatOptions = {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                      };
+                      return new Intl.DateTimeFormat(undefined, opts).format(d);
+                    } catch {
+                      return "TBD";
+                    }
+                  })();
+
+                  const teamDisplay = g.teamName;
+                  const storyline = storylines[teamDisplay];
+                  return (
+                    <GameCard
+                      key={`${teamDisplay}-${idx}`}
+                      teamName={teamDisplay}
+                      opponent={g.opponent}
+                      homeAway={g.homeAway}
+                      competition={g.competition}
+                      datetimeLocal={localDate}
+                      venue={g.venue || undefined}
+                      storyline={storyline}
+                      storylineLoading={!storyline && storylinesLoading}
+                      teamLogoUrl={g.teamLogoUrl || undefined}
+                      onClick={() =>
+                        sendText(
+                          `Tell me more about this ${teamDisplay} vs ${g.opponent} game`,
+                          `Tell me more about the ${teamDisplay} game`
+                        )
+                      }
+                    />
+                  );
+                })}
               </div>
             </>
           ) : (
