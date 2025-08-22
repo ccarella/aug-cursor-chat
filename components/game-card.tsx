@@ -11,6 +11,7 @@ type Props = {
   datetimeLocal: string;
   venue?: string;
   storyline?: string;
+  storylineLoading?: boolean;
   teamLogoUrl?: string;
   onClick?: () => void;
 };
@@ -23,6 +24,7 @@ export function GameCard({
   datetimeLocal,
   venue,
   storyline,
+  storylineLoading,
   teamLogoUrl,
   onClick,
 }: Props) {
@@ -31,12 +33,20 @@ export function GameCard({
       "Inter Miami":
         "https://upload.wikimedia.org/wikipedia/en/thumb/d/d6/Inter_Miami_CF_logo.svg/64px-Inter_Miami_CF_logo.svg.png",
       "New York Yankees":
-        "https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/NewYorkYankees_caplogo.svg/64px-NewYorkYankees_caplogo.svg.png",
+        "https://a.espncdn.com/i/teamlogos/mlb/500/nyy.png",
+      "Barcelona":
+        "https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg",
+      "FC Barcelona":
+        "https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg",
+      "New York Knicks":
+        "https://upload.wikimedia.org/wikipedia/en/2/25/New_York_Knicks_logo.svg",
     }),
     []
   );
 
-  const [imgSrc, setImgSrc] = useState<string | undefined>(teamLogoUrl);
+  const [imgSrc, setImgSrc] = useState<string | undefined>(
+    fallbackByTeam[teamName] || teamLogoUrl
+  );
   const [triedFallback, setTriedFallback] = useState(false);
   return (
     <button
@@ -83,6 +93,10 @@ export function GameCard({
         {storyline ? (
           <div className="text-sm mt-2 border-l-2 border-black/[.08] dark:border-white/[.12] pl-3">
             {storyline}
+          </div>
+        ) : storylineLoading ? (
+          <div className="text-sm mt-2 border-l-2 border-black/[.08] dark:border-white/[.12] pl-3">
+            Loading storyline…
           </div>
         ) : null}
       </div>
