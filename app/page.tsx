@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type ChatMessage = {
   role: "user" | "assistant";
   content: string;
+  citations?: string[];
 };
 
 export default function Home() {
@@ -40,7 +43,28 @@ export default function Home() {
       }
       const data = await res.json();
       const content = data?.choices?.[0]?.message?.content ?? "";
-      setMessages((prev) => [...prev, { role: "assistant", content }]);
+      const rawCitations =
+        data?.citations ??
+        data?.choices?.[0]?.message?.citations ??
+        data?.choices?.[0]?.message?.metadata?.citations ??
+        [];
+      const citations: string[] = Array.isArray(rawCitations)
+        ? rawCitations
+            .map((item: unknown) => {
+              if (typeof item === "string") return item;
+              if (item && typeof item === "object") {
+                const maybe = item as { url?: unknown };
+                return typeof maybe.url === "string" ? maybe.url : null;
+              }
+              return null;
+            })
+            .filter((u: string | null): u is string => Boolean(u))
+        : [];
+
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content, citations },
+      ]);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unknown error";
       setMessages((prev) => [
@@ -50,6 +74,18 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  function toMarkdownWithCitationLinks(content: string, citations?: string[]) {
+    if (!citations || citations.length === 0) return content;
+    // Replace bare numeric references like [1] with markdown links [1](url),
+    // but avoid touching already-linked patterns like [1](http...) using a negative lookahead for '('.
+    return content.replace(/\[(\d+)\](?!\()/g, (match, p1) => {
+      const ordinal = parseInt(p1, 10);
+      const url = citations[ordinal - 1];
+      // Escape brackets in the link label so the rendered text shows [n]
+      return url ? `[\\[${ordinal}\\]](${url})` : match;
+    });
   }
 
   return (
@@ -82,7 +118,25 @@ export default function Home() {
                 <span className="font-mono text-xs px-2 py-1 rounded bg-black/[.05] dark:bg-white/[.06] mr-2">
                   {m.role === "user" ? "You" : "AI"}
                 </span>
-                {m.content}
+                {m.role === "assistant" ? (
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      a: (anchorProps) => (
+                        <a
+                          {...anchorProps}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline text-blue-600 visited:text-purple-600 hover:opacity-80"
+                        />
+                      ),
+                    }}
+                  >
+                    {toMarkdownWithCitationLinks(m.content, m.citations)}
+                  </ReactMarkdown>
+                ) : (
+                  m.content
+                )}
               </div>
             ))
           )}
