@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { ChatMessage as Bubble } from "@/components/chat-message";
 import { GameCard } from "@/components/game-card";
 
@@ -12,22 +10,22 @@ type ChatMessage = {
   citations?: string[];
 };
 
+type GameItem = {
+  teamName: string;
+  opponent: string;
+  homeAway: "Home" | "Away";
+  competition: string;
+  datetimeUTC: string | null;
+  venue?: string | null;
+  teamLogoUrl?: string | null;
+};
+
 export default function Home() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const listRef = useRef<HTMLDivElement | null>(null);
-  const [games, setGames] = useState<
-    Array<{
-      teamName: string;
-      opponent: string;
-      homeAway: "Home" | "Away";
-      competition: string;
-      datetimeUTC: string | null;
-      venue?: string | null;
-      teamLogoUrl?: string | null;
-    }>
-  >([]);
+  const [games, setGames] = useState<GameItem[]>([]);
   const [storylines, setStorylines] = useState<Record<string, string>>({});
   const [storylinesLoading, setStorylinesLoading] = useState(false);
 
@@ -42,11 +40,11 @@ export default function Home() {
       try {
         const res = await fetch("/api/games", { cache: "no-store" });
         const data = await res.json();
-        const itemsRaw = Array.isArray(data?.items) ? data.items : [];
+        const itemsRaw: GameItem[] = Array.isArray(data?.items) ? (data.items as GameItem[]) : [];
         // Ensure Inter Miami always appears with a placeholder when no next event is returned
-        let list = itemsRaw;
-        const hasInterMiami = list.some((g: any) => {
-          const name = (g?.teamName || g?.team || "").toString().trim().toLowerCase();
+        let list: GameItem[] = itemsRaw;
+        const hasInterMiami = list.some((g) => {
+          const name = (g?.teamName || (g as unknown as { team?: string })?.team || "").toString().trim().toLowerCase();
           return name === "inter miami" || name === "inter miami cf";
         });
         if (!hasInterMiami) {
@@ -72,7 +70,7 @@ export default function Home() {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              items: list.map((g: any) => ({
+              items: list.map((g) => ({
                 teamName: g.teamName,
                 opponent: g.opponent,
                 competition: g.competition,
@@ -163,17 +161,7 @@ export default function Home() {
     await sendText(input);
   }
 
-  function toMarkdownWithCitationLinks(content: string, citations?: string[]) {
-    if (!citations || citations.length === 0) return content;
-    // Replace bare numeric references like [1] with markdown links [1](url),
-    // but avoid touching already-linked patterns like [1](http...) using a negative lookahead for '('.
-    return content.replace(/\[(\d+)\](?!\()/g, (match, p1) => {
-      const ordinal = parseInt(p1, 10);
-      const url = citations[ordinal - 1];
-      // Escape brackets in the link label so the rendered text shows [n]
-      return url ? `[\\[${ordinal}\\]](${url})` : match;
-    });
-  }
+  
 
   return (
     <div className="min-h-screen grid grid-rows-[auto,1fr]">
