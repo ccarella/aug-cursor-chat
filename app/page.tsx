@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ChatMessage as Bubble } from "@/components/chat-message";
-import { toMarkdownWithCitationLinks } from "@/lib/citations";
+import { GameCard } from "@/components/game-card";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -116,9 +116,15 @@ export default function Home() {
           className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
         >
           {messages.length === 0 ? (
-            <div className="opacity-60 text-sm">
-              Start chatting. History resets on reload.
-            </div>
+            <>
+              <div className="text-sm opacity-70 mb-2">Upcoming games</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <GameCard teamName="FC Barcelona" opponent="Getafe" homeAway="Home" competition="LaLiga" datetimeLocal="Sat, Aug 23 • 2:00 PM" storyline="Yamal back from knock; midfield rotation watch" teamLogoUrl="https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg" />
+                <GameCard teamName="Inter Miami" opponent="Atlanta United" homeAway="Away" competition="MLS" datetimeLocal="Sun, Aug 24 • 6:30 PM" storyline="Messi minutes? Tata vs. ATL narrative heats up" teamLogoUrl="https://upload.wikimedia.org/wikipedia/en/f/fb/Club_Internacional_de_F%C3%BAtbol_Miami_logo.svg" />
+                <GameCard teamName="New York Yankees" opponent="Red Sox" homeAway="Home" competition="MLB" datetimeLocal="Fri, Aug 22 • 7:05 PM EDT" storyline="Cole vs. Sale — rubber match vibes" teamLogoUrl="https://upload.wikimedia.org/wikipedia/commons/2/25/NewYorkYankees_caplogo.svg" />
+                <GameCard teamName="New York Knicks" opponent="Celtics" homeAway="Away" competition="NBA (Preseason)" datetimeLocal="Oct 2 • 7:30 PM" storyline="New-look bench unit preview" teamLogoUrl="https://upload.wikimedia.org/wikipedia/en/2/25/New_York_Knicks_logo.svg" />
+              </div>
+            </>
           ) : (
             messages.map((m, idx) => (
               <Bubble key={idx} role={m.role} content={m.content} citations={m.citations} />
