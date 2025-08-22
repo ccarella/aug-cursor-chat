@@ -90,16 +90,21 @@ export default function Home() {
 
   return (
     <div className="min-h-screen grid grid-rows-[auto,1fr,auto]">
-      <header className="px-6 py-4 border-b border-black/[.08] dark:border-white/[.145]">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <h1 className="text-lg font-medium tracking-[-0.02em]">Chat</h1>
-          <button
-            className="text-xs underline opacity-70 hover:opacity-100"
-            onClick={() => setMessages([])}
-            disabled={isLoading}
-          >
-            Clear
-          </button>
+      <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur px-6 py-3">
+        <div className="max-w-3xl mx-auto flex items-center gap-3">
+          <h1 className="text-sm font-semibold tracking-[-0.01em]">
+            Sonar Sports Buddy ⚽️🏀⚾️
+          </h1>
+          <div className="ml-auto">
+            <button
+              aria-label="Clear chat"
+              className="h-8 px-3 text-xs rounded-md transition-colors disabled:opacity-50 hover:bg-black/5 dark:hover:bg-white/10"
+              onClick={() => setMessages([])}
+              disabled={isLoading}
+            >
+              Clear
+            </button>
+          </div>
         </div>
       </header>
 
