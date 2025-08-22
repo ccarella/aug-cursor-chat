@@ -120,8 +120,8 @@ export default function Home() {
               <div className="text-sm opacity-70 mb-2">Upcoming games</div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <GameCard teamName="FC Barcelona" opponent="Getafe" homeAway="Home" competition="LaLiga" datetimeLocal="Sat, Aug 23 • 2:00 PM" storyline="Yamal back from knock; midfield rotation watch" teamLogoUrl="https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg" />
-                <GameCard teamName="Inter Miami" opponent="Atlanta United" homeAway="Away" competition="MLS" datetimeLocal="Sun, Aug 24 • 6:30 PM" storyline="Messi minutes? Tata vs. ATL narrative heats up" teamLogoUrl="https://upload.wikimedia.org/wikipedia/en/thumb/f/fb/Club_Internacional_de_F%C3%BAtbol_Miami_logo.svg/64px-Club_Internacional_de_F%C3%BAtbol_Miami_logo.svg.png" />
-                <GameCard teamName="New York Yankees" opponent="Red Sox" homeAway="Home" competition="MLB" datetimeLocal="Fri, Aug 22 • 7:05 PM EDT" storyline="Cole vs. Sale — rubber match vibes" teamLogoUrl="https://upload.wikimedia.org/wikipedia/en/thumb/2/25/NewYorkYankees_caplogo.svg/64px-NewYorkYankees_caplogo.svg.png" />
+                <GameCard teamName="Inter Miami" opponent="Atlanta United" homeAway="Away" competition="MLS" datetimeLocal="Sun, Aug 24 • 6:30 PM" storyline="Messi minutes? Tata vs. ATL narrative heats up" teamLogoUrl="https://upload.wikimedia.org/wikipedia/en/thumb/d/d6/Inter_Miami_CF_logo.svg/64px-Inter_Miami_CF_logo.svg.png" />
+                <GameCard teamName="New York Yankees" opponent="Red Sox" homeAway="Home" competition="MLB" datetimeLocal="Fri, Aug 22 • 7:05 PM EDT" storyline="Cole vs. Sale — rubber match vibes" teamLogoUrl="https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/NewYorkYankees_caplogo.svg/64px-NewYorkYankees_caplogo.svg.png" />
                 <GameCard teamName="New York Knicks" opponent="Celtics" homeAway="Away" competition="NBA (Preseason)" datetimeLocal="Oct 2 • 7:30 PM" storyline="New-look bench unit preview" teamLogoUrl="https://upload.wikimedia.org/wikipedia/en/2/25/New_York_Knicks_logo.svg" />
               </div>
             </>

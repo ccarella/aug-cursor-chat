@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useMemo, useState } from "react";
 
 type Props = {
   teamName: string;
@@ -23,17 +24,37 @@ export function GameCard({
   storyline,
   teamLogoUrl,
 }: Props) {
+  const fallbackByTeam: Record<string, string | undefined> = useMemo(
+    () => ({
+      "Inter Miami":
+        "https://upload.wikimedia.org/wikipedia/en/thumb/d/d6/Inter_Miami_CF_logo.svg/64px-Inter_Miami_CF_logo.svg.png",
+      "New York Yankees":
+        "https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/NewYorkYankees_caplogo.svg/64px-NewYorkYankees_caplogo.svg.png",
+    }),
+    []
+  );
+
+  const [imgSrc, setImgSrc] = useState<string | undefined>(teamLogoUrl);
+  const [triedFallback, setTriedFallback] = useState(false);
   return (
     <div className="overflow-hidden hover:shadow-md transition-shadow rounded-2xl border border-black/[.08] dark:border-white/[.12]">
       <div className="flex items-center gap-3 p-3">
-        {teamLogoUrl ? (
+        {imgSrc ? (
           <Image
-            src={teamLogoUrl}
+            src={imgSrc}
             alt={`${teamName} logo`}
             width={28}
             height={28}
             className="rounded-md object-contain bg-white dark:bg-white p-[2px]"
             unoptimized
+            onError={() => {
+              if (!triedFallback && fallbackByTeam[teamName]) {
+                setImgSrc(fallbackByTeam[teamName]);
+                setTriedFallback(true);
+              } else {
+                setImgSrc(undefined);
+              }
+            }}
           />
         ) : (
           <div className="size-7 rounded-md bg-black/[.06] dark:bg-white/[.08]" />
