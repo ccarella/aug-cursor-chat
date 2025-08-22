@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { ChatMessage as Bubble } from "@/components/chat-message";
+import { GameCard } from "@/components/game-card";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -10,24 +10,104 @@ type ChatMessage = {
   citations?: string[];
 };
 
+type GameItem = {
+  teamName: string;
+  opponent: string;
+  homeAway: "Home" | "Away";
+  competition: string;
+  datetimeUTC: string | null;
+  venue?: string | null;
+  teamLogoUrl?: string | null;
+};
+
 export default function Home() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const listRef = useRef<HTMLDivElement | null>(null);
+  const [games, setGames] = useState<GameItem[]>([]);
+  const [storylines, setStorylines] = useState<Record<string, string>>({});
+  const [storylinesLoading, setStorylinesLoading] = useState(false);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
   }, [messages]);
 
-  async function sendMessage(e: React.FormEvent) {
-    e.preventDefault();
-    const text = input.trim();
-    if (!text || isLoading) return;
+  // Load dynamic games on first render when no chat yet
+  useEffect(() => {
+    let cancelled = false;
+    async function loadGamesAndStorylines() {
+      try {
+        const res = await fetch("/api/games", { cache: "no-store" });
+        const data = await res.json();
+        const itemsRaw: GameItem[] = Array.isArray(data?.items) ? (data.items as GameItem[]) : [];
+        // Ensure Inter Miami always appears with a placeholder when no next event is returned
+        let list: GameItem[] = itemsRaw;
+        const hasInterMiami = list.some((g) => {
+          const name = (g?.teamName || (g as unknown as { team?: string })?.team || "").toString().trim().toLowerCase();
+          return name === "inter miami" || name === "inter miami cf";
+        });
+        if (!hasInterMiami) {
+          list = [
+            ...list,
+            {
+              teamName: "Inter Miami",
+              opponent: "TBD",
+              homeAway: "Home",
+              competition: "MLS",
+              datetimeUTC: null,
+              venue: null,
+              teamLogoUrl: null,
+            },
+          ];
+        }
+        if (cancelled) return;
+        setGames(list);
+
+        if (list.length > 0) {
+          setStorylinesLoading(true);
+          const storyRes = await fetch("/api/storylines", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              items: list.map((g) => ({
+                teamName: g.teamName,
+                opponent: g.opponent,
+                competition: g.competition,
+                datetimeUTC: g.datetimeUTC,
+                homeAway: g.homeAway,
+              })),
+            }),
+          });
+          const storyData = await storyRes.json().catch(() => ({}));
+          if (!cancelled) {
+            const map = storyData?.storylines && typeof storyData.storylines === "object" ? storyData.storylines : {};
+            setStorylines(map as Record<string, string>);
+          }
+        }
+      } catch {
+        // swallow; UI will just show without storylines
+      } finally {
+        if (!cancelled) setStorylinesLoading(false);
+      }
+    }
+    if (messages.length === 0) {
+      loadGamesAndStorylines();
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [messages.length]);
+
+  // Allow programmatic sends (e.g., clicking a game card)
+  async function sendText(text: string, displayText?: string) {
+    const trimmed = text.trim();
+    if (!trimmed || isLoading) return;
     setInput("");
     const nextMessages: ChatMessage[] = [
       ...messages,
-      { role: "user", content: text },
+      // Show a friendlier message if provided; otherwise show the raw text
+      { role: "user", content: (displayText || trimmed) },
     ];
     setMessages(nextMessages);
     setIsLoading(true);
@@ -76,78 +156,111 @@ export default function Home() {
     }
   }
 
-  function toMarkdownWithCitationLinks(content: string, citations?: string[]) {
-    if (!citations || citations.length === 0) return content;
-    // Replace bare numeric references like [1] with markdown links [1](url),
-    // but avoid touching already-linked patterns like [1](http...) using a negative lookahead for '('.
-    return content.replace(/\[(\d+)\](?!\()/g, (match, p1) => {
-      const ordinal = parseInt(p1, 10);
-      const url = citations[ordinal - 1];
-      // Escape brackets in the link label so the rendered text shows [n]
-      return url ? `[\\[${ordinal}\\]](${url})` : match;
-    });
+  async function sendMessage(e: React.FormEvent) {
+    e.preventDefault();
+    await sendText(input);
   }
 
+  
+
   return (
-    <div className="min-h-screen grid grid-rows-[auto,1fr,auto]">
-      <header className="px-6 py-4 border-b border-black/[.08] dark:border-white/[.145]">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <h1 className="text-lg font-medium tracking-[-0.02em]">Chat</h1>
-          <button
-            className="text-xs underline opacity-70 hover:opacity-100"
-            onClick={() => setMessages([])}
-            disabled={isLoading}
-          >
-            Clear
-          </button>
+    <div className="min-h-screen grid grid-rows-[auto,1fr]">
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur px-6 py-2 md:py-1">
+        <div className="max-w-3xl mx-auto flex items-center gap-3 border-b">
+          <h1 className="m-0 text-sm font-semibold tracking-[-0.01em]">
+            Ask Replay!
+          </h1>
+          <div className="ml-auto">
+            <button
+              aria-label="Clear chat"
+              className="h-8 px-3 text-xs rounded-md transition-colors disabled:opacity-50 hover:bg-black/5 dark:hover:bg-white/10"
+              onClick={() => setMessages([])}
+              disabled={isLoading}
+            >
+              Clear
+            </button>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto w-full flex flex-col">
+      <main className="max-w-3xl mx-auto w-full flex flex-col pb-24">
         <div
           ref={listRef}
           className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
         >
           {messages.length === 0 ? (
-            <div className="opacity-60 text-sm">
-              Start chatting. History resets on reload.
-            </div>
-          ) : (
-            messages.map((m, idx) => (
-              <div key={idx} className="whitespace-pre-wrap">
-                <span className="font-mono text-xs px-2 py-1 rounded bg-black/[.05] dark:bg-white/[.06] mr-2">
-                  {m.role === "user" ? "You" : "AI"}
-                </span>
-                {m.role === "assistant" ? (
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      a: (anchorProps) => (
-                        <a
-                          {...anchorProps}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline text-blue-600 visited:text-purple-600 hover:opacity-80"
-                        />
-                      ),
-                    }}
-                  >
-                    {toMarkdownWithCitationLinks(m.content, m.citations)}
-                  </ReactMarkdown>
-                ) : (
-                  m.content
-                )}
+            <>
+              <div className="text-sm opacity-70 mb-2">Upcoming games</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {games.map((g, idx) => {
+                  const localDate = (() => {
+                    if (!g.datetimeUTC) return "TBD";
+                    try {
+                      const d = new Date(g.datetimeUTC);
+                      const opts: Intl.DateTimeFormatOptions = {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                      };
+                      return new Intl.DateTimeFormat(undefined, opts).format(d);
+                    } catch {
+                      return "TBD";
+                    }
+                  })();
+
+                  const teamDisplay = g.teamName;
+                  const storyline = storylines[teamDisplay];
+                  return (
+                    <GameCard
+                      key={`${teamDisplay}-${idx}`}
+                      teamName={teamDisplay}
+                      opponent={g.opponent}
+                      homeAway={g.homeAway}
+                      competition={g.competition}
+                      datetimeLocal={localDate}
+                      venue={g.venue || undefined}
+                      storyline={storyline}
+                      storylineLoading={!storyline && storylinesLoading}
+                      teamLogoUrl={g.teamLogoUrl || undefined}
+                      onClick={() =>
+                        sendText(
+                          `Tell me more about this ${teamDisplay} vs ${g.opponent} game`,
+                          `Tell me more about the ${teamDisplay} game`
+                        )
+                      }
+                    />
+                  );
+                })}
               </div>
-            ))
+            </>
+          ) : (
+            <>
+              {messages.map((m, idx) => (
+                <Bubble key={idx} role={m.role} content={m.content} citations={m.citations} />
+              ))}
+              {isLoading && (
+                <div className="w-full flex justify-start">
+                  <div className="max-w-[85%] rounded-2xl px-4 py-3 shadow-sm bg-black/[.04] dark:bg-white/[.06] rounded-bl-sm">
+                    <div className="typing" aria-label="Assistant is typing" aria-live="polite" role="status">
+                      <span className="typing-dot"></span>
+                      <span className="typing-dot"></span>
+                      <span className="typing-dot"></span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>
 
       <form
         onSubmit={sendMessage}
-        className="max-w-3xl mx-auto w-full px-6 py-4 border-t border-black/[.08] dark:border-white/[.145]"
+        className="fixed bottom-0 left-0 right-0 z-20 bg-background/90 backdrop-blur shadow-md border-t border-black/[.08] dark:border-white/[.145]"
       >
-        <div className="flex gap-2">
+        <div className="max-w-3xl mx-auto w-full px-6 py-4 flex gap-2">
           <input
             className="flex-1 h-11 px-3 rounded-md bg-black/[.04] dark:bg-white/[.06] outline-none focus:ring-2 ring-black/10 dark:ring-white/20"
             placeholder="Ask anything…"
