@@ -33,6 +33,7 @@ export function GameCard({
             width={28}
             height={28}
             className="rounded-md object-contain bg-white dark:bg-white p-[2px]"
+            unoptimized
           />
         ) : (
           <div className="size-7 rounded-md bg-black/[.06] dark:bg-white/[.08]" />
