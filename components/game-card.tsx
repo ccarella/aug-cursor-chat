@@ -12,6 +12,7 @@ type Props = {
   venue?: string;
   storyline?: string;
   teamLogoUrl?: string;
+  onClick?: () => void;
 };
 
 export function GameCard({
@@ -23,6 +24,7 @@ export function GameCard({
   venue,
   storyline,
   teamLogoUrl,
+  onClick,
 }: Props) {
   const fallbackByTeam: Record<string, string | undefined> = useMemo(
     () => ({
@@ -37,7 +39,12 @@ export function GameCard({
   const [imgSrc, setImgSrc] = useState<string | undefined>(teamLogoUrl);
   const [triedFallback, setTriedFallback] = useState(false);
   return (
-    <div className="overflow-hidden hover:shadow-md transition-shadow rounded-2xl border border-black/[.08] dark:border-white/[.12]">
+    <button
+      type="button"
+      onClick={onClick}
+      className="text-left w-full overflow-hidden hover:shadow-md transition-shadow rounded-2xl border border-black/[.08] dark:border-white/[.12] focus:outline-none focus:ring-2 focus:ring-black/10 dark:focus:ring-white/20"
+      aria-label={`${teamName} vs ${opponent} ${homeAway}`}
+    >
       <div className="flex items-center gap-3 p-3">
         {imgSrc ? (
           <Image
@@ -79,7 +86,7 @@ export function GameCard({
           </div>
         ) : null}
       </div>
-    </div>
+    </button>
   );
 }
 
