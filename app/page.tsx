@@ -91,10 +91,10 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen grid grid-rows-[auto,1fr,auto]">
-      <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur px-6 py-3">
-        <div className="max-w-3xl mx-auto flex items-center gap-3">
-          <h1 className="text-sm font-semibold tracking-[-0.01em]">
+    <div className="min-h-screen grid grid-rows-[auto,1fr]">
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur px-6 py-2 md:py-1">
+        <div className="max-w-3xl mx-auto flex items-center gap-3 border-b">
+          <h1 className="m-0 text-sm font-semibold tracking-[-0.01em]">
             Sonar Sports Buddy ⚽️🏀⚾️
           </h1>
           <div className="ml-auto">
@@ -110,7 +110,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto w-full flex flex-col">
+      <main className="max-w-3xl mx-auto w-full flex flex-col pb-24">
         <div
           ref={listRef}
           className="flex-1 overflow-y-auto px-6 py-4 space-y-4"
@@ -126,18 +126,31 @@ export default function Home() {
               </div>
             </>
           ) : (
-            messages.map((m, idx) => (
-              <Bubble key={idx} role={m.role} content={m.content} citations={m.citations} />
-            ))
+            <>
+              {messages.map((m, idx) => (
+                <Bubble key={idx} role={m.role} content={m.content} citations={m.citations} />
+              ))}
+              {isLoading && (
+                <div className="w-full flex justify-start">
+                  <div className="max-w-[85%] rounded-2xl px-4 py-3 shadow-sm bg-black/[.04] dark:bg-white/[.06] rounded-bl-sm">
+                    <div className="typing" aria-label="Assistant is typing" aria-live="polite" role="status">
+                      <span className="typing-dot"></span>
+                      <span className="typing-dot"></span>
+                      <span className="typing-dot"></span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>
 
       <form
         onSubmit={sendMessage}
-        className="max-w-3xl mx-auto w-full px-6 py-4 border-t border-black/[.08] dark:border-white/[.145]"
+        className="fixed bottom-0 left-0 right-0 z-20 bg-background/90 backdrop-blur shadow-md border-t border-black/[.08] dark:border-white/[.145]"
       >
-        <div className="flex gap-2">
+        <div className="max-w-3xl mx-auto w-full px-6 py-4 flex gap-2">
           <input
             className="flex-1 h-11 px-3 rounded-md bg-black/[.04] dark:bg-white/[.06] outline-none focus:ring-2 ring-black/10 dark:ring-white/20"
             placeholder="Ask anything…"
