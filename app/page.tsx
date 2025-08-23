@@ -107,9 +107,10 @@ export default function Home() {
     const nextMessages: ChatMessage[] = [
       ...messages,
       // Show a friendlier message if provided; otherwise show the raw text
-      { role: "user", content: (displayText || trimmed) },
+      { role: "user", content: displayText || trimmed },
     ];
-    setMessages(nextMessages);
+    // Add placeholder assistant message for streaming updates
+    setMessages([...nextMessages, { role: "assistant", content: "" }]);
     setIsLoading(true);
     try {
       const res = await fetch("/api/chat", {
@@ -117,40 +118,82 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: nextMessages }),
       });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error || `Request failed: ${res.status}`);
+      if (!res.body) {
+        throw new Error("No response body");
       }
-      const data = await res.json();
-      const content = data?.choices?.[0]?.message?.content ?? "";
-      const rawCitations =
-        data?.citations ??
-        data?.choices?.[0]?.message?.citations ??
-        data?.choices?.[0]?.message?.metadata?.citations ??
-        [];
-      const citations: string[] = Array.isArray(rawCitations)
-        ? rawCitations
-            .map((item: unknown) => {
-              if (typeof item === "string") return item;
-              if (item && typeof item === "object") {
-                const maybe = item as { url?: unknown };
-                return typeof maybe.url === "string" ? maybe.url : null;
-              }
-              return null;
-            })
-            .filter((u: string | null): u is string => Boolean(u))
-        : [];
-
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content, citations },
-      ]);
+      const reader = res.body
+        .pipeThrough(new TextDecoderStream())
+        .getReader();
+      // Parse the server-sent event stream and update the last message
+      // in state as new tokens arrive.
+      let assistant = "";
+      let buffer = "";
+      let citations: string[] = [];
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += value;
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+        for (const line of lines) {
+          if (!line.startsWith("data:")) continue;
+          const data = line.slice(5).trim();
+          if (!data || data === "[DONE]") continue;
+          try {
+            const json = JSON.parse(data);
+            const delta = json?.choices?.[0]?.delta?.content;
+            if (delta) {
+              assistant += delta;
+              setMessages((prev) => {
+                const updated = [...prev];
+                updated[updated.length - 1] = {
+                  ...updated[updated.length - 1],
+                  content: assistant,
+                };
+                return updated;
+              });
+            }
+            const raw =
+              json?.citations ||
+              json?.choices?.[0]?.message?.citations ||
+              json?.choices?.[0]?.message?.metadata?.citations;
+            if (raw && Array.isArray(raw)) {
+              citations = raw
+                .map((item: unknown) => {
+                  if (typeof item === "string") return item;
+                  if (item && typeof item === "object") {
+                    const maybe = item as { url?: unknown };
+                    return typeof maybe.url === "string" ? maybe.url : null;
+                  }
+                  return null;
+                })
+                .filter((u: string | null): u is string => Boolean(u));
+            }
+          } catch {
+            /* ignore */
+          }
+        }
+      }
+      if (citations.length > 0) {
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            ...updated[updated.length - 1],
+            citations,
+          };
+          return updated;
+        });
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unknown error";
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: `Error: ${message}` },
-      ]);
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: "assistant",
+          content: `Error: ${message}`,
+        };
+        return updated;
+      });
     } finally {
       setIsLoading(false);
     }
