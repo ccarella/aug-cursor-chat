@@ -56,6 +56,24 @@ export function GameCard({
     teamLogoUrl || fallbackCandidatesByTeam[teamName]?.[0]
   );
   const [triedFallback, setTriedFallback] = useState(false);
+  const handleError = () => {
+    const candidates = fallbackCandidatesByTeam[teamName] || [];
+    const nextIndex = triedFallback ? fallbackIndex + 1 : 0;
+    if (nextIndex < candidates.length) {
+      setImgSrc(candidates[nextIndex]);
+      setFallbackIndex(nextIndex);
+      setTriedFallback(true);
+    } else {
+      setImgSrc(undefined);
+    }
+  };
+  const isDataUrl = imgSrc?.startsWith("data:");
+  const commonImageProps = {
+    width: 28,
+    height: 28,
+    className: "rounded-md object-contain bg-white dark:bg-white p-[2px]",
+    onError: handleError,
+  } as const;
   return (
     <button
       type="button"
@@ -65,25 +83,11 @@ export function GameCard({
     >
       <div className="flex items-center gap-3 p-3">
         {imgSrc ? (
-          <Image
-            src={imgSrc}
-            alt={`${teamName} logo`}
-            width={28}
-            height={28}
-            className="rounded-md object-contain bg-white dark:bg-white p-[2px]"
-            unoptimized
-            onError={() => {
-              const candidates = fallbackCandidatesByTeam[teamName] || [];
-              const nextIndex = triedFallback ? fallbackIndex + 1 : 0;
-              if (nextIndex < candidates.length) {
-                setImgSrc(candidates[nextIndex]);
-                setFallbackIndex(nextIndex);
-                setTriedFallback(true);
-              } else {
-                setImgSrc(undefined);
-              }
-            }}
-          />
+          isDataUrl ? (
+            <img src={imgSrc} alt={`${teamName} logo`} {...commonImageProps} />
+          ) : (
+            <Image src={imgSrc} alt={`${teamName} logo`} {...commonImageProps} />
+          )
         ) : (
           <div className="size-7 rounded-md bg-black/[.06] dark:bg-white/[.08]" />
         )}
