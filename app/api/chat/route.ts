@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { streamText } from "ai";
-import { createOpenAI } from "@ai-sdk/openai";
+// Using direct fetch to Perplexity Chat Completions streaming API for compatibility
 
 export const runtime = "edge";
 
@@ -101,27 +100,48 @@ export async function POST(request: Request) {
         "You are a helpful assistant that ALWAYS uses fresh web results in reasoning and cites sources. If web data is unavailable, state that explicitly.",
     };
 
-    const perplexity = createOpenAI({
-      apiKey,
-      baseURL: "https://api.perplexity.ai",
-    });
-
-    const result = await streamText({
-      model: perplexity(modelName),
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        systemPreamble,
-        ...messages,
-      ],
-      providerOptions: {
-        openai: {
+    const upstreamResponse = await fetch(
+      "https://api.perplexity.ai/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: modelName,
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            systemPreamble,
+            ...messages,
+          ],
           stream: true,
           return_citations: true,
+        }),
+      }
+    );
+
+    if (!upstreamResponse.ok) {
+      const errText = await upstreamResponse.text();
+      return NextResponse.json(
+        {
+          error: "Perplexity upstream error",
+          status: upstreamResponse.status,
+          detail: errText,
         },
+        { status: 502 }
+      );
+    }
+
+    return new Response(upstreamResponse.body, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        "X-Accel-Buffering": "no",
+        Connection: "keep-alive",
       },
     });
-
-    return result.toTextStreamResponse();
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unknown server error";
