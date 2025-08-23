@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 type Props = {
   teamName: string;
@@ -16,6 +16,29 @@ type Props = {
   onClick?: () => void;
 };
 
+const fallbackCandidatesByTeam: Record<string, string[]> = {
+  // Candidates are ordered by preference
+  "Inter Miami": [
+    // TODO: Add official logo to /public/logos/inter-miami.png and use "/logos/inter-miami.png"
+    // Temporary placeholder until official logo is added
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23FF69B4'/%3E%3Ctext x='32' y='32' text-anchor='middle' dominant-baseline='central' fill='black' font-family='Arial' font-size='12' font-weight='bold'%3EIM%3C/text%3E%3C/svg%3E",
+  ],
+  "New York Yankees": [
+    "https://a.espncdn.com/i/teamlogos/mlb/500/nyy.png",
+  ],
+  "Barcelona": [
+    "https://a.espncdn.com/i/teamlogos/soccer/500/83.png",
+    "https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg",
+  ],
+  "FC Barcelona": [
+    "https://a.espncdn.com/i/teamlogos/soccer/500/83.png",
+    "https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg",
+  ],
+  "New York Knicks": [
+    "https://a.espncdn.com/i/teamlogos/nba/500/nyk.png",
+  ],
+};
+
 export function GameCard({
   teamName,
   opponent,
@@ -28,32 +51,6 @@ export function GameCard({
   teamLogoUrl,
   onClick,
 }: Props) {
-  const fallbackCandidatesByTeam: Record<string, string[]> = useMemo(
-    () => ({
-      // Candidates are ordered by preference
-      "Inter Miami": [
-        // TODO: Add official logo to /public/logos/inter-miami.png and use "/logos/inter-miami.png"
-        // Temporary placeholder until official logo is added
-        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23FF69B4'/%3E%3Ctext x='32' y='32' text-anchor='middle' dominant-baseline='central' fill='black' font-family='Arial' font-size='12' font-weight='bold'%3EIM%3C/text%3E%3C/svg%3E",
-      ],
-      "New York Yankees": [
-        "https://a.espncdn.com/i/teamlogos/mlb/500/nyy.png",
-      ],
-      "Barcelona": [
-        "https://a.espncdn.com/i/teamlogos/soccer/500/83.png",
-        "https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg",
-      ],
-      "FC Barcelona": [
-        "https://a.espncdn.com/i/teamlogos/soccer/500/83.png",
-        "https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg",
-      ],
-      "New York Knicks": [
-        "https://a.espncdn.com/i/teamlogos/nba/500/nyk.png",
-      ],
-    }),
-    []
-  );
-
   const [fallbackIndex, setFallbackIndex] = useState(0);
   const [imgSrc, setImgSrc] = useState<string | undefined>(
     teamLogoUrl || fallbackCandidatesByTeam[teamName]?.[0]
