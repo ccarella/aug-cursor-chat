@@ -81,11 +81,11 @@ export async function POST(request: Request) {
       ? body.messages
       : [];
     // Only allow known model identifiers to prevent arbitrary API calls
-    const allowedModels = new Set(["sonar-pro", "sonar-mini"]);
+    const allowedModels = new Set(["sonar", "sonar-pro"]);
     const modelName =
       typeof body?.model === "string" && allowedModels.has(body.model)
         ? body.model
-        : "sonar-pro";
+        : "sonar";
 
     if (messages.length === 0) {
       return NextResponse.json(

@@ -21,18 +21,20 @@ type GameItem = {
   teamLogoUrl?: string | null;
 };
 
+const ALLOWED_MODELS = new Set(["sonar", "sonar-pro"]);
+
 export default function Home() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const listRef = useRef<HTMLDivElement | null>(null);
   const [games, setGames] = useState<GameItem[]>([]);
-  const [model, setModel] = useState("sonar-pro");
+  const [model, setModel] = useState("sonar");
 
   // Load persisted model preference from localStorage
   useEffect(() => {
     const stored = typeof window !== "undefined" ? localStorage.getItem("model") : null;
-    if (stored) setModel(stored);
+    if (stored && ALLOWED_MODELS.has(stored)) setModel(stored);
   }, []);
 
   // Persist model preference
