@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChatMessage as Bubble } from "@/components/chat-message";
 import { GameCard } from "@/components/game-card";
+import { SettingsMenu } from "@/components/settings-menu";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -26,6 +27,20 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const listRef = useRef<HTMLDivElement | null>(null);
   const [games, setGames] = useState<GameItem[]>([]);
+  const [model, setModel] = useState("sonar-pro");
+
+  // Load persisted model preference from localStorage
+  useEffect(() => {
+    const stored = typeof window !== "undefined" ? localStorage.getItem("model") : null;
+    if (stored) setModel(stored);
+  }, []);
+
+  // Persist model preference
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("model", model);
+    }
+  }, [model]);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
@@ -90,7 +105,7 @@ export default function Home() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: nextMessages }),
+        body: JSON.stringify({ messages: nextMessages, model }),
       });
       if (!res.body) {
         throw new Error("No response body");
@@ -187,7 +202,7 @@ export default function Home() {
           <h1 className="m-0 text-sm font-semibold tracking-[-0.01em]">
             Ask Replay!
           </h1>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1">
             <button
               aria-label="Clear chat"
               className="h-8 px-3 text-xs rounded-md transition-colors disabled:opacity-50 hover:bg-black/5 dark:hover:bg-white/10"
@@ -196,6 +211,7 @@ export default function Home() {
             >
               Clear
             </button>
+            <SettingsMenu value={model} onChange={setModel} />
           </div>
         </div>
       </header>

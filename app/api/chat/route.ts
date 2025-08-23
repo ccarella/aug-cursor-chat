@@ -80,6 +80,12 @@ export async function POST(request: Request) {
     const messages: ChatMessage[] = Array.isArray(body?.messages)
       ? body.messages
       : [];
+    // Only allow known model identifiers to prevent arbitrary API calls
+    const allowedModels = new Set(["sonar-pro", "sonar-mini"]);
+    const modelName =
+      typeof body?.model === "string" && allowedModels.has(body.model)
+        ? body.model
+        : "sonar-pro";
 
     if (messages.length === 0) {
       return NextResponse.json(
@@ -101,7 +107,7 @@ export async function POST(request: Request) {
     });
 
     const result = await streamText({
-      model: perplexity("sonar-pro"),
+      model: perplexity(modelName),
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         systemPreamble,
