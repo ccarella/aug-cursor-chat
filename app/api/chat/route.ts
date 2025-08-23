@@ -79,6 +79,14 @@ export async function POST(request: Request) {
     const messages: ChatMessage[] = Array.isArray(body?.messages)
       ? body.messages
       : [];
+    const timezone =
+      typeof body?.timezone === "string" && body.timezone
+        ? body.timezone
+        : "America/Tegucigalpa";
+    const localTime =
+      typeof body?.localTime === "string" && body.localTime
+        ? body.localTime
+        : null;
     // Only allow known model identifiers to prevent arbitrary API calls
     const allowedModels = new Set(["sonar-pro", "sonar-mini"]);
     const modelName =
@@ -93,7 +101,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // Force a system instruction to ensure web results are used each turn.
+    // Include the user's current local time so the model has temporal context
+    const timeInstruction: ChatMessage = {
+      role: "system",
+      content: localTime
+        ? `The user's current local time is ${localTime} (${timezone}).`
+        : `The user's local timezone is ${timezone}.`,
+    };
+    // Force a system instruction to ensure web results are used each turn
     const systemPreamble: ChatMessage = {
       role: "system",
       content:
@@ -112,6 +127,7 @@ export async function POST(request: Request) {
           model: modelName,
           messages: [
             { role: "system", content: SYSTEM_PROMPT },
+            timeInstruction,
             systemPreamble,
             ...messages,
           ],

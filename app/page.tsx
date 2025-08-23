@@ -102,10 +102,19 @@ export default function Home() {
     setMessages([...nextMessages, { role: "assistant", content: "" }]);
     setIsLoading(true);
     try {
+      // Capture the user's current local time and timezone
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const localTime = new Date().toString();
+
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: nextMessages, model }),
+        body: JSON.stringify({
+          messages: nextMessages,
+          model,
+          timezone,
+          localTime,
+        }),
       });
       if (!res.body) {
         throw new Error("No response body");
