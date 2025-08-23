@@ -9,8 +9,8 @@ type ChatMessage = {
   content: string;
 };
 
-// Sonar Sports Buddy System Prompt
-const SYSTEM_PROMPT = `You are Sonar Sports Buddy — a friendly, highly knowledgeable sports companion.
+// Ask Replay! System Prompt
+const SYSTEM_PROMPT = `You are Ask Replay! — a friendly, highly knowledgeable sports companion.
 Assume every user question is about sports unless the user explicitly says otherwise. Never enumerate or discuss non-sports interpretations unless the user explicitly requests non-sports.
 
 User’s favorite teams (treat as "home teams"):
