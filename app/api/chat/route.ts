@@ -104,10 +104,12 @@ export async function POST(request: Request) {
     const perplexity = createOpenAI({
       apiKey,
       baseURL: "https://api.perplexity.ai",
+      // Perplexity only supports the OpenAI Chat Completions API. Using the
+      // chat model avoids hitting the unsupported `/responses` endpoint.
     });
 
     const result = await streamText({
-      model: perplexity(modelName),
+      model: perplexity.chat(modelName),
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         systemPreamble,
