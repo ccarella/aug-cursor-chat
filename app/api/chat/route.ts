@@ -80,12 +80,12 @@ export async function POST(request: Request) {
     const messages: ChatMessage[] = Array.isArray(body?.messages)
       ? body.messages
       : [];
-    // Only allow known model identifiers to prevent arbitrary API calls
-    const allowedModels = new Set(["sonar-pro", "sonar-mini"]);
+    // Only allow supported model identifiers to prevent upstream 404s
+    const allowedModels = new Set(["sonar"]);
     const modelName =
       typeof body?.model === "string" && allowedModels.has(body.model)
         ? body.model
-        : "sonar-pro";
+        : "sonar";
 
     if (messages.length === 0) {
       return NextResponse.json(
@@ -121,7 +121,7 @@ export async function POST(request: Request) {
       },
     });
 
-    return result.toTextStreamResponse();
+    return result.toUIMessageStreamResponse();
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unknown server error";

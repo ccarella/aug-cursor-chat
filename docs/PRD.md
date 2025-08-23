@@ -41,7 +41,7 @@ Sports information is fragmented across news, league sites, social, and data pro
 
 Must have:
 - Chat interface (single room) with user/assistant messages
-- Calls to Perplexity `sonar-pro` with a specialized system prompt for Ask Replay!
+- Calls to Perplexity `sonar` with a specialized system prompt for Ask Replay!
 - Forced instruction to use fresh web results each turn
 - Citations returned and rendered as clickable links
 - Greeting behavior: upcoming games dashboard for the four favorite teams
@@ -95,7 +95,7 @@ Non-goals (v1):
 1) User types a message and submits
 2) Frontend posts `messages` array to `/api/chat`
 3) Server (Edge runtime) calls Perplexity Chat Completions with:
-   - `model: "sonar-pro"`
+   - `model: "sonar"`
    - `messages`: [Ask Replay! system prompt, web-results preamble, user convo]
    - `return_citations: true`
    - `stream: false` (v1)

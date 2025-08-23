@@ -21,18 +21,20 @@ type GameItem = {
   teamLogoUrl?: string | null;
 };
 
+const ALLOWED_MODELS = new Set(["sonar"]);
+
 export default function Home() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const listRef = useRef<HTMLDivElement | null>(null);
   const [games, setGames] = useState<GameItem[]>([]);
-  const [model, setModel] = useState("sonar-pro");
+  const [model, setModel] = useState("sonar");
 
   // Load persisted model preference from localStorage
   useEffect(() => {
     const stored = typeof window !== "undefined" ? localStorage.getItem("model") : null;
-    if (stored) setModel(stored);
+    if (stored && ALLOWED_MODELS.has(stored)) setModel(stored);
   }, []);
 
   // Persist model preference
@@ -117,7 +119,7 @@ export default function Home() {
       // in state as new tokens arrive.
       let assistant = "";
       let buffer = "";
-      let citations: string[] = [];
+      const citations: string[] = [];
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
@@ -130,9 +132,8 @@ export default function Home() {
           if (!data || data === "[DONE]") continue;
           try {
             const json = JSON.parse(data);
-            const delta = json?.choices?.[0]?.delta?.content;
-            if (delta) {
-              assistant += delta;
+            if (json.type === "text-delta" && typeof json.delta === "string") {
+              assistant += json.delta;
               setMessages((prev) => {
                 const updated = [...prev];
                 updated[updated.length - 1] = {
@@ -141,22 +142,8 @@ export default function Home() {
                 };
                 return updated;
               });
-            }
-            const raw =
-              json?.citations ||
-              json?.choices?.[0]?.message?.citations ||
-              json?.choices?.[0]?.message?.metadata?.citations;
-            if (raw && Array.isArray(raw)) {
-              citations = raw
-                .map((item: unknown) => {
-                  if (typeof item === "string") return item;
-                  if (item && typeof item === "object") {
-                    const maybe = item as { url?: unknown };
-                    return typeof maybe.url === "string" ? maybe.url : null;
-                  }
-                  return null;
-                })
-                .filter((u: string | null): u is string => Boolean(u));
+            } else if (json.type === "source-url" && typeof json.url === "string") {
+              citations.push(json.url);
             }
           } catch {
             /* ignore */
