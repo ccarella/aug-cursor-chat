@@ -21,7 +21,7 @@ type GameItem = {
   teamLogoUrl?: string | null;
 };
 
-const ALLOWED_MODELS = new Set(["sonar", "sonar-pro"]);
+const ALLOWED_MODELS = new Set(["sonar"]);
 
 export default function Home() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);

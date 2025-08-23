@@ -80,8 +80,8 @@ export async function POST(request: Request) {
     const messages: ChatMessage[] = Array.isArray(body?.messages)
       ? body.messages
       : [];
-    // Only allow known model identifiers to prevent arbitrary API calls
-    const allowedModels = new Set(["sonar", "sonar-pro"]);
+    // Only allow supported model identifiers to prevent upstream 404s
+    const allowedModels = new Set(["sonar"]);
     const modelName =
       typeof body?.model === "string" && allowedModels.has(body.model)
         ? body.model

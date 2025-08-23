@@ -3,10 +3,7 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Check, Settings } from "lucide-react";
 
-const MODELS = [
-  { value: "sonar", label: "Sonar" },
-  { value: "sonar-pro", label: "Sonar Pro" },
-];
+const MODELS = [{ value: "sonar", label: "Sonar" }];
 
 type Props = {
   value: string;
