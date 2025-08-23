@@ -26,8 +26,6 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const listRef = useRef<HTMLDivElement | null>(null);
   const [games, setGames] = useState<GameItem[]>([]);
-  const [storylines, setStorylines] = useState<Record<string, string>>({});
-  const [storylinesLoading, setStorylinesLoading] = useState(false);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
@@ -36,7 +34,7 @@ export default function Home() {
   // Load dynamic games on first render when no chat yet
   useEffect(() => {
     let cancelled = false;
-    async function loadGamesAndStorylines() {
+    async function loadGames() {
       try {
         const res = await fetch("/api/games", { cache: "no-store" });
         const data = await res.json();
@@ -63,36 +61,12 @@ export default function Home() {
         }
         if (cancelled) return;
         setGames(list);
-
-        if (list.length > 0) {
-          setStorylinesLoading(true);
-          const storyRes = await fetch("/api/storylines", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              items: list.map((g) => ({
-                teamName: g.teamName,
-                opponent: g.opponent,
-                competition: g.competition,
-                datetimeUTC: g.datetimeUTC,
-                homeAway: g.homeAway,
-              })),
-            }),
-          });
-          const storyData = await storyRes.json().catch(() => ({}));
-          if (!cancelled) {
-            const map = storyData?.storylines && typeof storyData.storylines === "object" ? storyData.storylines : {};
-            setStorylines(map as Record<string, string>);
-          }
-        }
       } catch {
-        // swallow; UI will just show without storylines
-      } finally {
-        if (!cancelled) setStorylinesLoading(false);
+        // swallow; UI will just show without games
       }
     }
     if (messages.length === 0) {
-      loadGamesAndStorylines();
+      loadGames();
     }
     return () => {
       cancelled = true;
@@ -254,7 +228,6 @@ export default function Home() {
                   })();
 
                   const teamDisplay = g.teamName;
-                  const storyline = storylines[teamDisplay];
                   return (
                     <GameCard
                       key={`${teamDisplay}-${idx}`}
@@ -264,8 +237,6 @@ export default function Home() {
                       competition={g.competition}
                       datetimeLocal={localDate}
                       venue={g.venue || undefined}
-                      storyline={storyline}
-                      storylineLoading={!storyline && storylinesLoading}
                       teamLogoUrl={g.teamLogoUrl || undefined}
                       onClick={() =>
                         sendText(
