@@ -104,6 +104,10 @@ export async function POST(request: Request) {
     const perplexity = createOpenAI({
       apiKey,
       baseURL: "https://api.perplexity.ai",
+      // Perplexity uses the OpenAI Chat Completions endpoint, not the
+      // new Responses API. Enforce strict compatibility so requests hit
+      // `/chat/completions` instead of `/responses` which returns 404.
+      compatibility: "strict",
     });
 
     const result = await streamText({
