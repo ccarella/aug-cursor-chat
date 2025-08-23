@@ -10,8 +10,6 @@ type Props = {
   competition: string;
   datetimeLocal: string;
   venue?: string;
-  storyline?: string;
-  storylineLoading?: boolean;
   teamLogoUrl?: string;
   onClick?: () => void;
 };
@@ -46,8 +44,6 @@ export function GameCard({
   competition,
   datetimeLocal,
   venue,
-  storyline,
-  storylineLoading,
   teamLogoUrl,
   onClick,
 }: Props) {
@@ -105,15 +101,6 @@ export function GameCard({
           {datetimeLocal}
           {venue ? ` • ${venue}` : ""}
         </div>
-        {storyline ? (
-          <div className="text-sm mt-2 border-l-2 border-black/[.08] dark:border-white/[.12] pl-3">
-            {storyline}
-          </div>
-        ) : storylineLoading ? (
-          <div className="text-sm mt-2 border-l-2 border-black/[.08] dark:border-white/[.12] pl-3">
-            Loading storyline…
-          </div>
-        ) : null}
       </div>
     </button>
   );
