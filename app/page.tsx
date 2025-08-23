@@ -276,20 +276,23 @@ export default function Home() {
             </>
           ) : (
             <>
-              {messages.map((m, idx) => (
-                <Bubble key={idx} role={m.role} content={m.content} citations={m.citations} />
-              ))}
-              {isLoading && (
-                <div className="w-full flex justify-start">
-                  <div className="max-w-[85%] rounded-2xl px-4 py-3 shadow-sm bg-black/[.04] dark:bg-white/[.06] rounded-bl-sm">
-                    <div className="typing" aria-label="Assistant is typing" aria-live="polite" role="status">
-                      <span className="typing-dot"></span>
-                      <span className="typing-dot"></span>
-                      <span className="typing-dot"></span>
+              {messages.map((m, idx) => {
+                if (m.role === "assistant" && m.content.trim() === "") return null;
+                return <Bubble key={idx} role={m.role} content={m.content} citations={m.citations} />;
+              })}
+              {isLoading &&
+                messages[messages.length - 1]?.role === "assistant" &&
+                messages[messages.length - 1]?.content.trim() === "" && (
+                  <div className="w-full flex justify-start">
+                    <div className="max-w-[85%] rounded-2xl px-4 py-3 shadow-sm bg-black/[.04] dark:bg-white/[.06] rounded-bl-sm">
+                      <div className="typing" aria-label="Assistant is typing" aria-live="polite" role="status">
+                        <span className="typing-dot"></span>
+                        <span className="typing-dot"></span>
+                        <span className="typing-dot"></span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
             </>
           )}
         </div>
