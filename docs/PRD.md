@@ -1,8 +1,8 @@
-# Sonar Sports Buddy Chat — Product Requirements Document (PRD)
+# Ask Replay! — Product Requirements Document (PRD)
 
 ## 1. Overview
 
-Sonar Sports Buddy is a lightweight, citation-first sports chat companion. It helps fans—especially those who support FC Barcelona, Inter Miami CF, New York Yankees, and New York Knicks—get quick, credible answers about schedules, scores, injuries, odds, storylines, and where-to-watch. The app emphasizes clarity, trustworthy sourcing, and a friendly fan tone.
+Ask Replay! is a lightweight, citation-first sports chat companion. It helps fans—especially those who support FC Barcelona, Inter Miami CF, New York Yankees, and New York Knicks—get quick, credible answers about schedules, scores, injuries, odds, storylines, and where-to-watch. The app emphasizes clarity, trustworthy sourcing, and a friendly fan tone.
 
 This PRD captures the v1 goals, scope, UX, technical architecture, metrics, and risks for the current product implemented in this repository.
 
@@ -41,7 +41,7 @@ Sports information is fragmented across news, league sites, social, and data pro
 
 Must have:
 - Chat interface (single room) with user/assistant messages
-- Calls to Perplexity `sonar-pro` with a specialized system prompt for Sonar Sports Buddy
+- Calls to Perplexity `sonar-pro` with a specialized system prompt for Ask Replay!
 - Forced instruction to use fresh web results each turn
 - Citations returned and rendered as clickable links
 - Greeting behavior: upcoming games dashboard for the four favorite teams
@@ -96,7 +96,7 @@ Non-goals (v1):
 2) Frontend posts `messages` array to `/api/chat`
 3) Server (Edge runtime) calls Perplexity Chat Completions with:
    - `model: "sonar-pro"`
-   - `messages`: [Sonar Sports Buddy system prompt, web-results preamble, user convo]
+   - `messages`: [Ask Replay! system prompt, web-results preamble, user convo]
    - `return_citations: true`
    - `stream: false` (v1)
 4) Server returns upstream JSON to client
