@@ -117,7 +117,7 @@ export default function Home() {
       // in state as new tokens arrive.
       let assistant = "";
       let buffer = "";
-      let citations: string[] = [];
+      const citations: string[] = [];
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
@@ -130,9 +130,8 @@ export default function Home() {
           if (!data || data === "[DONE]") continue;
           try {
             const json = JSON.parse(data);
-            const delta = json?.choices?.[0]?.delta?.content;
-            if (delta) {
-              assistant += delta;
+            if (json.type === "text-delta" && typeof json.delta === "string") {
+              assistant += json.delta;
               setMessages((prev) => {
                 const updated = [...prev];
                 updated[updated.length - 1] = {
@@ -141,22 +140,8 @@ export default function Home() {
                 };
                 return updated;
               });
-            }
-            const raw =
-              json?.citations ||
-              json?.choices?.[0]?.message?.citations ||
-              json?.choices?.[0]?.message?.metadata?.citations;
-            if (raw && Array.isArray(raw)) {
-              citations = raw
-                .map((item: unknown) => {
-                  if (typeof item === "string") return item;
-                  if (item && typeof item === "object") {
-                    const maybe = item as { url?: unknown };
-                    return typeof maybe.url === "string" ? maybe.url : null;
-                  }
-                  return null;
-                })
-                .filter((u: string | null): u is string => Boolean(u));
+            } else if (json.type === "source-url" && typeof json.url === "string") {
+              citations.push(json.url);
             }
           } catch {
             /* ignore */
