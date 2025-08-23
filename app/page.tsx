@@ -10,6 +10,12 @@ type ChatMessage = {
   citations?: string[];
 };
 
+type ApiChatMessage = {
+  role: "system" | "user" | "assistant";
+  content: string;
+  citations?: string[];
+};
+
 type GameItem = {
   teamName: string;
   opponent: string;
@@ -87,10 +93,16 @@ export default function Home() {
     setMessages([...nextMessages, { role: "assistant", content: "" }]);
     setIsLoading(true);
     try {
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const timeMessage: ApiChatMessage = {
+        role: "system",
+        content: `User local time: ${new Date().toLocaleString()} (${timezone})`,
+      };
+      const apiMessages: ApiChatMessage[] = [timeMessage, ...nextMessages];
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: nextMessages }),
+        body: JSON.stringify({ messages: apiMessages }),
       });
       if (!res.body) {
         throw new Error("No response body");
