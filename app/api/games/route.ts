@@ -89,33 +89,34 @@ function parseUtcIso(dateStr?: string | null, timeStr?: string | null, timestamp
 }
 
 async function getUpcomingGames(): Promise<NormalizedGame[]> {
-  const results: NormalizedGame[] = [];
+  // Fetch each team and its next event concurrently
+  const results = await Promise.all(
+    TEAM_QUERIES.map(async (t) => {
+      const teamInfo = await findTeamByName(t);
+      if (!teamInfo) return null;
 
-  for (const t of TEAM_QUERIES) {
-    const teamInfo = await findTeamByName(t);
-    if (!teamInfo) continue;
+      const next = await fetchNextEventForTeam(teamInfo.idTeam);
+      const event = next.events?.[0];
+      if (!event) return null;
 
-    const next = await fetchNextEventForTeam(teamInfo.idTeam);
-    const event = next.events?.[0];
-    if (!event) continue;
+      const isHome = event.idHomeTeam === teamInfo.idTeam;
+      const opponent = isHome ? (event.strAwayTeam || "TBD") : (event.strHomeTeam || "TBD");
 
-    const isHome = event.idHomeTeam === teamInfo.idTeam;
-    const opponent = isHome ? (event.strAwayTeam || "TBD") : (event.strHomeTeam || "TBD");
+      const normalized: NormalizedGame = {
+        teamName: t.displayName || teamInfo.strTeam,
+        opponent,
+        homeAway: isHome ? "Home" : "Away",
+        competition: event.strLeague || "",
+        datetimeUTC: parseUtcIso(event.dateEvent || null, event.strTime || null, event.strTimestamp || null),
+        venue: event.strVenue ?? null,
+        teamLogoUrl: teamInfo.strTeamBadge ?? null,
+      };
 
-    const normalized: NormalizedGame = {
-      teamName: t.displayName || teamInfo.strTeam,
-      opponent,
-      homeAway: isHome ? "Home" : "Away",
-      competition: event.strLeague || "",
-      datetimeUTC: parseUtcIso(event.dateEvent || null, event.strTime || null, event.strTimestamp || null),
-      venue: event.strVenue ?? null,
-      teamLogoUrl: teamInfo.strTeamBadge ?? null,
-    };
+      return normalized;
+    })
+  );
 
-    results.push(normalized);
-  }
-
-  return results;
+  return results.filter((g): g is NormalizedGame => g !== null);
 }
 
 export async function GET(request: Request) {
