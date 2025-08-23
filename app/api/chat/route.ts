@@ -115,7 +115,7 @@ export async function POST(request: Request) {
       },
     });
 
-    return result.toAIStreamResponse();
+    return result.toTextStreamResponse();
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unknown server error";
